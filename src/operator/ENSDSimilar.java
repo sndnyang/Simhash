@@ -7,14 +7,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.wltea.analyzer.sample.others;
 import fileclass.TextContent;
 import term.ENSD;
 
 public class ENSDSimilar extends SimilarOperator {
 
 	private static TextContent content = new TextContent();
-	private boolean isScam = false;
 	
 	public ENSDSimilar() {
 		super();
@@ -36,13 +34,13 @@ public class ENSDSimilar extends SimilarOperator {
 		private boolean isweibo;
 
 		InnerResult(int oneinner, int twoinner, int totalUn, int matchUn) {
-			
+
 			wordTotal = oneinner;
 			wordMatch = twoinner;
-			
+
 			wordTotalUnrepeat = totalUn;
 			wordMatchUnrepeat = matchUn;
-			
+
 			isweibo = false;
 		}
 
@@ -196,7 +194,7 @@ public class ENSDSimilar extends SimilarOperator {
 
 		return simular;
 	}
-	
+
 	/**
 	 * @param a
 	 *            表示第一篇文章的内容
@@ -205,48 +203,31 @@ public class ENSDSimilar extends SimilarOperator {
 	 * @return 返回的结果表示两篇文章的相似度
 	 * @author yancey.yang
 	 */
-	public double computeSimilar(ENSD a, ENSD b)
-			throws IOException {
+	public double computeSimilar(ENSD a, ENSD b) throws IOException {
 		// 文章太短，无法计算相似度
 		if (a.getContent().length() < 10 || b.getContent().length() < 10) {
 			System.out.println("文章太短，无法计算相似度");
 			return 0;
 		}
-		
-		long beginTime =  System.currentTimeMillis();
-		
-		if (!isScam) {
-			content.getMovieName(a.getContent(), b.getContent());
-		}
+
+		content.getMovieName(a.getContent(), b.getContent());
 
 		boolean isweibo = false;
-		double similarity = 0;
 
-		if (isScam) {
-			HashMap<String, Integer> mapScamFirst = a.getTermFrequency();
-			HashMap<String, Integer> mapScamSecond = b.getTermFrequency();
-			similarity = others.computeScam(mapScamFirst, mapScamSecond);
-
-		} else {
-
-			InnerResult res = compareMap(a, b);
-
-			if (a.getContent().length() < 180 || b.getContent().length() < 180) {
-				isweibo = true;
-			}
-
-			res.setWeiBo(isweibo);
-			similarity = computesimulation(res);
-			recordJudgeResult(similarity);
-		}
-		long endTime =  System.currentTimeMillis();
-		this.duringTime += endTime - beginTime;
+		InnerResult res = compareMap(a, b);
 		
+		if (a.getContent().length() < 180 || b.getContent().length() < 180) {
+			isweibo = true;
+		}
+
+		res.setWeiBo(isweibo);
+		double similarity = computesimulation(res);
+		recordJudgeResult(similarity);
+
 		return similarity;
 	}
 
-	public InnerResult compareMap(ENSD first,
-			ENSD second) {
+	public InnerResult compareMap(ENSD first, ENSD second) {
 
 		int same = 0;
 		int sameUnrepeat = 0;
@@ -256,29 +237,29 @@ public class ENSDSimilar extends SimilarOperator {
 
 		HashMap<String, Integer> firstMap = first.getTermFrequency();
 		HashMap<String, Integer> secondMap = second.getTermFrequency();
-		
+
 		int rf = first.getKeyThreshold();
 		int rs = second.getKeyThreshold();
 		
 		firstSize = sum(firstMap);
-		secondSize = sum(firstMap);
+		secondSize = sum(secondMap);
 
 		Iterator<Entry<String, Integer>> iterfirst = firstMap.entrySet()
 				.iterator();
-		
+
 		while (iterfirst.hasNext()) {
-			Map.Entry<String, Integer> entryfirst = (Map.Entry<String, Integer>) 
-					iterfirst.next();
-			
+			Map.Entry<String, Integer> entryfirst = (Map.Entry<String, Integer>) iterfirst
+					.next();
+
 			String firstKey = (String) entryfirst.getKey();
 			int firstValue = (Integer) entryfirst.getValue();
-			
+
 			if (secondMap.containsKey(firstKey)) {
 				same += firstValue + secondMap.get(firstKey);
-				sameUnrepeat ++;
+				sameUnrepeat++;
 			}
 		}
-	
+		
 		if (rf == 1 && firstMap.size() > 20) {
 			firstSize = getTopFiveNumber(firstMap);
 		}
@@ -354,8 +335,8 @@ public class ENSDSimilar extends SimilarOperator {
 						if (four == str.charAt(j + 3)) {
 							// 成功匹配4个，第五个不检测
 							i += 3;
-							char same[] = {str.charAt(j), str.charAt(j + 1),
-									str.charAt(j + 2), str.charAt(j + 3)};
+							char same[] = { str.charAt(j), str.charAt(j + 1),
+									str.charAt(j + 2), str.charAt(j + 3) };
 							String temp = String.copyValueOf(same);
 							if (!ste.contains(temp))
 								ste.add(String.copyValueOf(same));

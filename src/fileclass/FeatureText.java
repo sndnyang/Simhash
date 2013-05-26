@@ -16,6 +16,7 @@ public class FeatureText {
 	private TermFrequencyEle freqFeature;
 	private ENSD ensdFeature;
 	private SimHash fingerprint;
+	public int debug;
 	
 	public FeatureText(String fileName) {
 		// TODO Auto-generated constructor stub
@@ -36,7 +37,9 @@ public class FeatureText {
 		
 		String content = null;
 		SimHash tempHash = null;
+		
 		try {
+			
 			if (this.freqFeature == null) {
 				content = readFileByLine();
 				tempHash = new SimHash(content, this.name);
@@ -47,6 +50,7 @@ public class FeatureText {
 				tempHash.setTermFrequency(
 						this.freqFeature.getTermFrequency());
 			}
+			tempHash.debug = this.debug;
 			tempHash.setHashBits(bits);
 			tempHash.generateEle();
 			this.fingerprint = tempHash; 
@@ -77,6 +81,7 @@ public class FeatureText {
 				tempENSD.setTermFrequency(
 						this.freqFeature.getTermFrequency());
 			}
+			tempENSD.setKeyThreshold();
 			tempENSD.generateEle();
 			ensdFeature = tempENSD;
 			

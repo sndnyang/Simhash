@@ -13,7 +13,6 @@ import org.wltea.analyzer.sample.NewWord;
 public class ENSD extends TermFrequencyEle {
 
 	private ArrayList<String> nickName = new ArrayList<String>();
-	private boolean ISSCAM = false;
 	private String nick = null;
 
 	public ENSD(String str, String fileName) throws IOException {
@@ -28,6 +27,9 @@ public class ENSD extends TermFrequencyEle {
 		if (termFrequency == null) {
 			super.setKeyThreshold();
 			super.generateEle();
+			if (termFrequency.size() > 4) {
+				reduceHighFreq();
+			}
 		}
 		
 		// 前一次生成的map的size太小，而后一次又太大，需要中断循环。
@@ -37,44 +39,33 @@ public class ENSD extends TermFrequencyEle {
 		HashMap<String, Integer> temp = new HashMap<String, Integer>();
 
 		while (true) {
-
 			reduceLowFreq(temp);
-
 			if (temp.size() >= 5 && temp.size() <= 20) {
+				break;
+			}
+			
+			if ((keyThreshold <= 1 || smallToLarge) && temp.size() > 20) {
 				break;
 			}
 
 			if (temp.size() < 5) {
 				smallToLarge = true;
-				if (keyThreshold <= 1) {
-					break;
-				}
 				keyThreshold--;
 			}
 
 			if (temp.size() > 20) {
-				if (smallToLarge) {
-					break;
-				} else
-					keyThreshold++;
+				keyThreshold++;
 			}
+			
 			temp.clear();
 		}
 
 		termFrequency = temp;
 
-		// 处理极高频的词语
-		if (termFrequency.size() > 4) {
-			reduceHighFeq();
-		}
-
-		if (!ISSCAM) {
-			// 计算新词并写入临时词库中
-			nick = NewWord.getNamebyNick(nickName);
-			if (nick != null) {
-				addNickname(nick);
-				nick = null;
-			}
+		// 计算新词并写入临时词库中
+		nick = NewWord.getNamebyNick(nickName);
+		if (nick != null) {
+			addNickname(nick);
 		}
 	}
 
@@ -115,7 +106,7 @@ public class ENSD extends TermFrequencyEle {
 		return termFrequency.size();
 	}
 
-	protected void reduceHighFeq() {
+	protected void reduceHighFreq() {
 		// TODO Auto-generated method stub
 
 		int avg = effectiveNum / 4;

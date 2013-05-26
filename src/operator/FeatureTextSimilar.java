@@ -41,7 +41,6 @@ public class FeatureTextSimilar extends SimilarOperator{
 	public double computeSimilar(FeatureText cmpDoc, FeatureText cmpToDoc) {
 		// TODO Auto-generated method stub
 		double similarity = 0;
-		long beginTime =  System.currentTimeMillis();
 		switch (intType) {
 		case 1:
 			this.type = "frequency";
@@ -68,9 +67,6 @@ public class FeatureTextSimilar extends SimilarOperator{
 							cmpToDoc.extractSimHash(bits));
 			break;
 		}
-		long endTime =  System.currentTimeMillis();
-		this.duringTime = endTime - beginTime;
-		
 		return similarity;
 	}
 	

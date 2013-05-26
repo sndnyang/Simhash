@@ -430,9 +430,7 @@ public class paperSimilation {
 		boolean isweibo = false;
 		computeRepeatCount(str1);
 		mapFirst = getFinalMap(str1);
-		System.out.println(mapFirst);
 		repeatfirst = REPEATCOUNT;
-
 		if (!ISSCAM) {			
 			// 计算新词并写入临时词库中
 			firstPersonName = NewWord.obtainNewWords(mapFirst, str1);
@@ -443,10 +441,8 @@ public class paperSimilation {
 				firstnick =null;				
 			}
 		}
-		
 		computeRepeatCount(str2);
 		mapSecond = getFinalMap(str2);
-		System.out.println(mapSecond);
 		repeatsecond = REPEATCOUNT;
 
 		if (!ISSCAM)
@@ -472,7 +468,8 @@ public class paperSimilation {
 		} else {
 			innerresult res = compareMap(mapFirst, repeatfirst, mapSecond,
 					repeatsecond);
-
+			System.out.println((float) res.getWordMatch() / res.getWordTotal());
+			
 			if (str1.length() < 180 || str2.length() < 180) {
 				isweibo = true;
 			}
@@ -557,7 +554,7 @@ public class paperSimilation {
 		HashMap<String, Integer> mapdata;
 		boolean isfirst = true;
 		
-
+		int round = 1;
 		while (true) {
 
 			StringReader reader1 = new StringReader(str1);
@@ -567,6 +564,9 @@ public class paperSimilation {
 			// System.out.println("分词用时间是："+(Item_Time_3-Item_Time_2));
 
 			mapdata = getMap(iksegs1, str1.length());
+			if (round <= 1 ) {
+				System.out.println(mapdata.size() +" "+ mapdata);
+			}
 
 			if (mapdata.size() >= 5 && mapdata.size() <= 20) {
 				break;
@@ -591,45 +591,6 @@ public class paperSimilation {
 		}
 
 		return mapdata;
-	}
-
-	// 这个接口是测试使用的
-	private static void getFinalMap(String str1, boolean isprint)
-			throws IOException {
-		// TODO Auto-generated method stub
-		HashMap<String, Integer> mapdata;
-		boolean isfirst = true;
-
-		while (true) {
-			StringReader reader1 = new StringReader(str1);
-
-			// long Item_Time_2 =System.currentTimeMillis();
-			IKSegmentation iksegs1 = new IKSegmentation(reader1);
-			// long Item_Time_3 =System.currentTimeMillis();
-			// System.out.println("分词用时间是："+(Item_Time_3-Item_Time_2));
-
-			mapdata = getMap(iksegs1, str1.length());
-			if (mapdata.size() >= 5 && mapdata.size() <= 20) {
-				break;
-			}
-
-			if (mapdata.size() < 5) {
-				isfirst = false;
-
-				REPEATCOUNT--;
-				if (REPEATCOUNT <= 0) {
-					REPEATCOUNT = 1;
-					break;
-				}
-			}
-
-			if (mapdata.size() > 20) {
-				if (!isfirst) {
-					break;
-				} else
-					REPEATCOUNT++;
-			}
-		}
 	}
 
 	/**
@@ -685,41 +646,6 @@ public class paperSimilation {
 				array.add(List.get(out).toString());
 			}
 		}
-
-		// -----下面是冒泡算法，给关键字排序--------
-		for (int i = 0; i < array.size(); i++) {
-			for (int j = 0; j < array.size() - 1 - i; j++) {
-				if (map.get(array.get(j)) < map.get(array.get(j + 1))) {
-					String tmp = array.get(j);
-					array.set(j, array.get(j + 1));
-					array.set(j + 1, tmp);
-				}
-			}
-		}
-
-		// System.out.println(map);// 这个就是打印字符出现的次数
-		// System.out.println(array);// 这个打印排序后的数组,从小到大
-		// 把得到的关键字显示出来
-		// if (array.size() > 10) {
-		// for (int i = 0; i < 10; i++) {
-		// System.out.println(array.get(i) + map.get(array.get(i)) + " ");
-		// // System.out.println(map.get(array.get(i)));
-		// }
-		// } else {
-		// for (int i = 0; i < array.size(); i++) {
-		// System.out.println(array.get(i) + map.get(array.get(i)) + " ");
-		// // System.out.println(map.get(array.get(i)));
-		// }
-		// }
-
-		// Integer numberTop = map.get(array.get(0));
-		// numberTop+=15;
-		// map.put(array.get(0), numberTop);
-		// if(strLen>1500&&map.size()<12&&REPEATCOUNT>=1)
-		// {
-		// REPEATCOUNT--;
-		// map = getMap(ikseg,strLen);
-		// }
 
 		// 处理极高频的词语
 		if (map.size() > 4) {
@@ -869,6 +795,7 @@ public class paperSimilation {
 		int firstauto10 = 0;
 		int secondauto10 = 0;
 
+
 		Iterator<Entry<String, Integer>> iterfirst = mapfirst.entrySet().iterator();
 		while (iterfirst.hasNext()) {
 			Map.Entry<String, Integer> entryfirst = (Map.Entry<String, Integer>) iterfirst.next();
@@ -891,7 +818,6 @@ public class paperSimilation {
 					same += valfirst;
 					same += valsecond;
 					sameUnrepeat++;
-					// System.out.println("匹配上的关键字" + keysecond);
 				}
 
 				secondauto10++;
@@ -910,7 +836,7 @@ public class paperSimilation {
 			if (firstauto10 < 10) {
 			}
 		}
-
+		
 		if (rf == 1 && mapfirst.size() > 20) {
 			firstSize = getTopFiveNumber(mapfirst);
 		}
@@ -920,7 +846,6 @@ public class paperSimilation {
 		}
 
 		total = secondSize + firstSize;
-		// System.out.println("fisrtsize="+firstSize+"second"+secondSize);
 		innerresult in = new innerresult(total, same, mapfirst.size()
 				+ mapsecond.size(), sameUnrepeat);
 
@@ -1077,40 +1002,13 @@ public class paperSimilation {
 
 	
 	public static float computetest(List<ArrayList<String>> list)
-			throws IOException {
-		
-// i为偶数表示不相似的值，i为奇数表示相似的值
-// j表示一个具体的文章
-// k表示和j比较的文章，遍历同一个文件夹中的没有
-//      int ii=0;
-//		
-//		for(int i=0;i<list.size();i++ )
-//		{
-//			ArrayList<String> item = list.get(i);
-////			System.out.println(item.size());
-//			ii+=item.size();
-//		}
-//		System.out.println(ii);		
+			throws IOException {	
 
 		for (int i = 0; i < list.size(); i += 2) {
 			List<String> Item_unsimilar = list.get(i);
 			List<String> Item_similar = list.get(i + 1);
 
 			for (int j = 0; j < Item_unsimilar.size(); j++) {
-				/*
-				for (int k = j + 1; k < Item_unsimilar.size(); k++) {
-					float res = computeSimular(Item_unsimilar.get(j),
-							Item_unsimilar.get(k));
-					computedata(res, false);
-
-					// if(res>0.45)
-					// {
-					// getFinalMap(Item_unsimilar.get(j),true);
-					// getFinalMap(Item_unsimilar.get(k),true);
-					//
-					// System.out.println("相似度为"+res);
-					// }
-				}*/
 
 				for (int j_similar = 0; j_similar < Item_similar.size(); j_similar++) {
 
@@ -1127,15 +1025,6 @@ public class paperSimilation {
 					float res = computeSimular(Item_similar.get(j),
 							Item_similar.get(k));
 					computedata(res, true);
-
-//					 if(res<0.45)
-//					 {
-//						 
-//					 getFinalMap(Item_similar.get(j),true);
-//					 getFinalMap(Item_similar.get(k),true);					 
-//					 System.out.println("文章长度为"+Item_similar.get(j).length()+"文章为"+Item_similar.get(j));
-//					 System.out.println("相似度为"+res);					
-//					 }
 					
 				}
 			}
@@ -1286,15 +1175,13 @@ public class paperSimilation {
 		getNickname();
 		
 		List<ArrayList<String>> list = new ArrayList<ArrayList<String>>();
-		list = getData("小测试");
+		list = getData("E:\\测试");
 
 		long time_begin = System.currentTimeMillis();
 		System.out.println(new Date());
 		TESTALL = 0;
 		TESTSAME = 0;
 		ISSCAM = false;
-		
-		getFinalMap(list.get(0).get(0), true);
 
 		for (int i = 0; i < 1; i++) {
 			computetest(list);

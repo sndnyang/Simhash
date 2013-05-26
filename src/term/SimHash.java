@@ -20,6 +20,7 @@ public class SimHash extends TermFrequencyEle {
 	private String strSimHash;
 	private int[] weightVector;
 	private int hashbits = 64;
+	public int debug = 0;
 
 	public SimHash(String str, String fileName) throws IOException {
 		// TODO Auto-generated constructor stub
@@ -51,7 +52,9 @@ public class SimHash extends TermFrequencyEle {
 	}
 
 	public String simHash() {
-		
+		if (debug != 0) {
+			System.out.println(termFrequency);
+		}
 		int[] v = genWeightVector();
 		this.strSimHash = genCorrespondBits(v);
 		weightVector = v;
@@ -88,6 +91,11 @@ public class SimHash extends TermFrequencyEle {
 				} else {
 					v[i] -= val;
 				}
+			}
+			if (debug != 0) {
+				for (int i = 0; i < v.length; i++)
+					System.out.print(v[i] + " ");
+				System.out.println();					
 			}
 		}
 		

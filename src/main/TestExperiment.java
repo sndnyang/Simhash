@@ -1,29 +1,51 @@
 package main;
 
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
 import org.wltea.analyzer.IKSegmentation;
 
+import term.ENSD;
+import term.SimHash;
 import term.TopicDirectory;
+import operator.ENSDSimilar;
 import operator.FeatureTextSimilar;
+import operator.VectorSimilar;
 import fileclass.DirectoryOperator;
 import fileclass.FeatureText;
 
 public class TestExperiment {
 
-	private static String[] testDataSet = { ".\\Simhash\\testData",
-			".\\Simhash\\分类测试", "..\\data\\体育领域", ".\\Simhash\\小测试"};
+	private static String[] testDataSet = {
+			"E:\\yangxiulong\\Simhash\\testData",
+			"E:\\yangxiulong\\Simhash\\分类测试", "E:\\data\\体育领域",
+			"E:\\yangxiulong\\Simhash\\小测试", "E:\\yangxiulong\\Simhash\\分类小测试" };
 
 	private ArrayList<String> formerDirList;
 	private ArrayList<String> latterDirList;
 
-	// private boolean isRecursive = true;
+	int debug = 0;
 
-	private int testTimes = 1;
+	VectorSimilar vOperator = new VectorSimilar();
+	ENSDSimilar ENSDOperator = new ENSDSimilar();
+
+	private FeatureTextSimilar freqOperator = new FeatureTextSimilar(1);
+	private FeatureTextSimilar ensdOperator = new FeatureTextSimilar(2);
+	private FeatureTextSimilar simHashOperator = new FeatureTextSimilar(3);
+	private BufferedWriter out;
+	long freqTime = 0;
+	long ENSDTime = 0;
+	long simHashTime = 0;
+
+	int totalCmpTimes = 0;
+	int testTimes = 1;
+	int task;
 
 	private void setTestTimes(int times) {
 		// TODO Auto-generated method stub
@@ -40,37 +62,77 @@ public class TestExperiment {
 
 	private void testDistToCosine(String dirPath) throws IOException {
 		// TODO Auto-generated method stub
-		DistToCosine test = new DistToCosine();
-		test.testInTopic(dirPath);
+		this.task = 4;
+		File file = new File(
+				"E:\\yangxiulong\\Simhash\\output\\DistToPrecise.csv");
+
+		FileWriter fw = new FileWriter(file);
+		out = new BufferedWriter(fw);
+		out.write("汉明距离,fp余弦值,降维余弦值,集合相似度,ENSD相似度,特征数量\r\n");
+		getFeatureRecurse(dirPath, 1);
+		out.close();
 	}
 
-	private void testRate(String dirPath) {
+	private void testRate(String dirPath) throws IOException {
 		// TODO Auto-generated method stub
-
 		long timeBegin = System.currentTimeMillis();
 		System.out.println("速度测试实验，开始时间为 " + new Date());
-		
-		FeatureTextSimilar tester = new FeatureTextSimilar(3);
-		DirectoryOperator dirOper = new DirectoryOperator();
-		ArrayList<String> subDir = dirOper.getSubDirList(dirPath);
-		
-		for (int i = 0; i < subDir.size(); i++) {
-			ArrayList<String> secondLevel = dirOper.getSubDirList(subDir.get(i));
-			for (int j = 0; j < secondLevel.size(); j++) {
-				TopicDirectory topicDir = new TopicDirectory(secondLevel.get(i));
-				ArrayList<FeatureText> filesList = topicDir.extractFileFeature("simhash");
-				
-				for (int k = 0; k < testTimes; k++) {
-					for (int l = 0; l < filesList.size(); l++) {
-						cmpDocToDir(filesList.get(l), filesList, l+1, tester);
-					}
-				}
-			}
-		}
 
+		getFeatureRecurse(dirPath, 2);
+
+		System.out.println("比较时间  " + (double) simHashTime / 1000 + " 秒.");
+		System.out.println("比较时间  " + (double) ENSDTime / 1000 + " 秒.");
+		System.out.println("比较时间  " + (double) freqTime / 1000 + " 秒.");
+		System.out.println("比较次数  " + totalCmpTimes);
 		long timeEnd = System.currentTimeMillis();
 		System.out.println("速度测试实验，结束时间为 " + new Date());
-		System.out.println("所用时间" + (timeEnd - timeBegin));
+		System.out.println("所用时间 " + ((double) timeEnd - timeBegin) / 1000
+				+ " 秒.");
+	}
+
+	private void getFeatureRecurse(String dirPath, int job) throws IOException {
+		// TODO Auto-generated method stub
+		ArrayList<FeatureText> filesList = initFeatureSet(dirPath);
+
+		switch (job) {
+		case 1:
+			cmpFeatureTextSet(filesList, filesList);
+			break;
+		case 2:
+			for (int i = 0; i < testTimes; i++) {
+				totalCmpTimes += filesList.size() * (filesList.size() - 1) / 2;
+				for (int j = 1; j < 4; j++) {
+					this.task = j;
+					cmpFeatureTextSet(filesList, filesList);
+				}
+			}
+			break;
+		}
+
+		ArrayList<String> subDirList = new DirectoryOperator()
+				.getSubDirList(dirPath);
+		for (int i = 0; i < subDirList.size(); i++) {
+			getFeatureRecurse(subDirList.get(i), job);
+		}
+	}
+
+	private ArrayList<FeatureText> initFeatureSet(String dirPath) {
+		// TODO Auto-generated method stub
+		TopicDirectory topicDir = new TopicDirectory(dirPath);
+		ArrayList<FeatureText> filesList = topicDir
+				.extractFileFeature("frequency");
+
+		for (int i = 0; i < filesList.size(); i++) {
+			FeatureText temp = filesList.get(i);
+			temp.debug = this.debug;
+			if (this.debug != 0) {
+				System.out.println(temp.getName());
+				System.out.println(temp.getFrequency());
+				temp.extractSimHash(64);
+				temp.extractENSD();
+			}
+		}
+		return filesList;
 	}
 
 	private void testFactor(String dirPath) throws IOException {
@@ -80,23 +142,16 @@ public class TestExperiment {
 			System.out.println("一定少了某个话题文件夹了.");
 			System.exit(0);
 		}
-		long timeBegin = System.currentTimeMillis();
-		long timeEnd;
-		
-		ArrayList<ArrayList<FeatureText>> formerSet = 
-				getTopicSetData(formerDirList);
-		
-		ArrayList<ArrayList<FeatureText>> latterSet =
-				getTopicSetData(latterDirList);
-		
-		timeEnd = System.currentTimeMillis();
-		System.out.println("所用时间" + (timeEnd - timeBegin));
-		
+
+		ArrayList<ArrayList<FeatureText>> formerSet = getTopicSetData(formerDirList);
+
+		ArrayList<ArrayList<FeatureText>> latterSet = getTopicSetData(latterDirList);
+
 		if (formerSet.size() != latterSet.size()) {
 			System.out.println("一定少了某个话题文件夹了.");
 			System.exit(0);
 		}
-		
+
 		cmpTopicSet(formerSet, latterSet);
 	}
 
@@ -107,19 +162,20 @@ public class TestExperiment {
 
 		FileWriter fw = new FileWriter(writeFile);
 		fw.write("位数,k值,总相似次数,准确率,召回率,F-value,漏判率,误判率,错误率\n");
-		
+
 		int[] bitLength = new int[] { 16, 32, 64 };
+
+		task = 3;
 
 		for (int i = 0; i < bitLength.length; i++) {
 			for (int j = 0; j <= bitLength[i] / 3; j++) {
 				FeatureTextSimilar testSimilar = new FeatureTextSimilar(3);
 				testSimilar.setSimHashPara(bitLength[i], j);
-				
+
 				for (int k = 0; k < formerSet.size(); k++) {
-					cmpFeatureTextSet(formerSet.get(k), 
-							latterSet.get(k), testSimilar);
+					cmpFeatureTextSet(formerSet.get(k), latterSet.get(k));
 				}
-				
+
 				testSimilar.writeFactorResult(fw);
 			}
 		}
@@ -127,22 +183,40 @@ public class TestExperiment {
 	}
 
 	private void cmpFeatureTextSet(ArrayList<FeatureText> formerList,
-			ArrayList<FeatureText> latterList, FeatureTextSimilar tester) {
+			ArrayList<FeatureText> latterList) {
 		// TODO Auto-generated method stub
+
+		long start = System.currentTimeMillis();
 		for (int i = 0; i < formerList.size(); i++) {
+
 			FeatureText formerDoc = formerList.get(i);
-				
-			cmpDocToDir(formerDoc, formerList, i + 1, tester);
-			cmpDocToDir(formerDoc, latterList, 0, tester);
+			cmpDocToDir(formerDoc, formerList, i + 1);
+
+			if (formerList != latterList) {
+				cmpDocToDir(formerDoc, latterList, 0);
+			}
+		}
+
+		long end = System.currentTimeMillis();
+
+		switch (task) {
+		case 1:
+			freqTime += end - start;
+			break;
+		case 2:
+			ENSDTime += end - start;
+			break;
+		default:
+			simHashTime += end - start;
+			break;
 		}
 	}
 
 	private ArrayList<ArrayList<FeatureText>> getTopicSetData(
 			ArrayList<String> dirList) {
 		// TODO Auto-generated method stub
-		ArrayList<ArrayList<FeatureText>> tempSet = 
-				new ArrayList<ArrayList<FeatureText>>();
-		
+		ArrayList<ArrayList<FeatureText>> tempSet = new ArrayList<ArrayList<FeatureText>>();
+
 		for (int i = 0; i < dirList.size(); i++) {
 			TopicDirectory topic = new TopicDirectory(dirList.get(i));
 			tempSet.add(topic.extractFileFeature("simhash"));
@@ -165,54 +239,115 @@ public class TestExperiment {
 			System.out.println("一定少了某个话题文件夹了.");
 			System.exit(0);
 		}
-		
-		testAccuracyAlgorithm(1);		
-		testAccuracyAlgorithm(2);		
-		testAccuracyAlgorithm(3);
+
+		for (int i = 1; i < 4; i++) {
+			task = i;
+			testAccuracyAlgorithm(task);
+		}
+	}
+
+	private FeatureTextSimilar getCurOperator() {
+		switch (task) {
+		case 1:
+			return freqOperator;
+		case 2:
+			return ensdOperator;
+		default:
+			return simHashOperator;
+		}
 	}
 
 	private void testAccuracyAlgorithm(int type) {
 		// TODO Auto-generated method stub
-		FeatureTextSimilar operator = new FeatureTextSimilar(type);
-		
+		FeatureTextSimilar operator = getCurOperator();
+
 		for (int i = 0; i < formerDirList.size(); i++) {
-			TopicDirectory formerTopic = new TopicDirectory(formerDirList.get(i));
-			TopicDirectory latterTopic = new TopicDirectory(latterDirList.get(i));
+			TopicDirectory formerTopic = new TopicDirectory(
+					formerDirList.get(i));
+			TopicDirectory latterTopic = new TopicDirectory(
+					latterDirList.get(i));
 
 			String typeName = operator.getType();
 
 			cmpFeatureTextSet(formerTopic.extractFileFeature(typeName),
-					latterTopic.extractFileFeature(typeName), operator);
+					latterTopic.extractFileFeature(typeName));
 		}
-		
-		switch (type) {
-		case 1:
-			System.out.println("词频向量相似情况：");
-			break;
-		case 2:
-			System.out.println("ENSD相似情况：");
-			break;
-		default:
-			System.out.println("SimHash相似情况：");
-			break;
-		}
+
+		String[] message = { "词频向量相似情况：", "ENSD相似情况：", "SimHash相似情况：" };
+		System.out.println(message[task - 1]);
 		operator.showResult();
 	}
 
 	private void cmpDocToDir(FeatureText cmpDoc, ArrayList<FeatureText> cmpSet,
-			int begin, FeatureTextSimilar operator) {
+			int begin) {
 		// TODO Auto-generated method stub
+		FeatureTextSimilar operator = getCurOperator();
+
 		for (int i = begin; i < cmpSet.size(); i++) {
 			FeatureText cmpToDoc = cmpSet.get(i);
+			if (this.task == 4) {
+				getAllPara(cmpDoc, cmpToDoc);
+				continue;
+			}
 			if (begin != 0)
 				operator.setter(true);
 			else
 				operator.setter(false);
-			
+
 			double similarity = operator.computeSimilar(cmpDoc, cmpToDoc);
-				
+
 			operator.recordJudgeResult(similarity);
 		}
+	}
+
+	private void getAllPara(FeatureText formerText, FeatureText latterText) {
+		// TODO Auto-generated method stub
+		System.out.println(formerText.getName() + " " + latterText.getName());
+		SimHash formerHash = formerText.getSimHash();
+		SimHash latterHash = latterText.getSimHash();
+		int[] temp = formerHash.getWeightVector();
+		for (int i = 0; i < temp.length; i++)
+			System.out.print(temp[i] + " ");
+		System.out.println();
+		temp = latterHash.getWeightVector();
+		for (int i = 0; i < temp.length; i++)
+			System.out.print(temp[i] + " ");
+		System.out.println();
+		System.out.println(formerHash.getSimHash() + " "
+				+ latterHash.getSimHash());
+
+		double setSimilar = vOperator.computeAsSet(
+				formerHash.getTermFrequency(), latterHash.getTermFrequency());
+
+		int dis = vOperator.hammingDistance(formerHash.getIntegerHash(),
+				latterHash.getIntegerHash());
+
+		double fpCosine = vOperator.computeAsVector(formerHash.getSimHash(),
+				latterHash.getSimHash());
+
+		double reducedCosine = vOperator.computeAsVector(
+				formerHash.getWeightVector(), latterHash.getWeightVector());
+
+		ENSD a = formerText.extractENSD();
+		ENSD b = latterText.extractENSD();
+		System.out.println(a.getTermFrequency().size() + " "
+				+ b.getTermFrequency().size());
+		DecimalFormat df = new DecimalFormat("#.000");
+
+		try {
+			double ENSDsimilar = ENSDOperator.computeSimilar(a, b);
+			out.append(dis + "," + df.format(fpCosine) + ",");
+			out.append(df.format(reducedCosine) + "," + df.format(setSimilar)
+					+ ",");
+			out.append(df.format(ENSDsimilar) + ",");
+
+			out.append(formerHash.getTermFrequency().size() + ","
+					+ latterHash.getTermFrequency().size() + "\r\n");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 
 	/**
@@ -250,6 +385,8 @@ public class TestExperiment {
 				continue;
 			} else if (args[i].equals("-threshold")) {
 				continue;
+			} else if (args[i].equals("-debug")) {
+				test.debug = 1;
 			}
 		}
 

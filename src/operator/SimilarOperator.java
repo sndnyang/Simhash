@@ -12,8 +12,6 @@ public class SimilarOperator {
 	protected int similarTimes;		//总的相似次数
 
 	protected boolean actualState;	//在测试中，两篇文档原本是相似或不相似？
-	
-	protected long duringTime;
 
 	public SimilarOperator() {
 		testSimilar = 0;
@@ -25,7 +23,6 @@ public class SimilarOperator {
 		similarTimes = 0;
 
 		actualState = true;
-		duringTime = 0;
 	}
 
 
@@ -57,7 +54,6 @@ public class SimilarOperator {
 				similarTimes++;
 			}
 		}
-
 	}
 
 	public void showResult() {
@@ -83,7 +79,5 @@ public class SimilarOperator {
 				+ (1 - (double) isUnsimilar / testUnsimilar));
 		System.out.println("错误率为 "
 				+ (2 - recall - (double) isUnsimilar / testUnsimilar) / 2);
-		
-		System.out.println("模型比较时间  " + duringTime / 1000 + " 秒.");
 	}
 }

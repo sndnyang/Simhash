@@ -11,16 +11,17 @@ import java.util.ArrayList;
  */
 public class DirectoryOperator {
 	private String dirPath = null;
-	private ArrayList<String> subDirList;
-	private ArrayList<String> subFileList;
+	private ArrayList<String> subDirList = new ArrayList<String>();
+	private ArrayList<String> subFileList = new ArrayList<String>();
 	
 	public ArrayList<String> getSubDirList(String dirPath) {
 		// TODO Auto-generated method stub
 		if (this.dirPath == null || !this.dirPath.equals(dirPath)) {
 			this.getSubDirAndFiles(dirPath);
 		}
-		if (this.subDirList == null) {
-			System.out.println("获取子文件夹列表出错");
+		if (this.subDirList == null&& 
+				new File(dirPath).list().length != 0) {
+			System.out.println(dirPath + "  获取子文件夹列表出错");
 			System.exit(0);
 		}			
 		return this.subDirList;
@@ -31,8 +32,11 @@ public class DirectoryOperator {
 		if (this.dirPath == null || !this.dirPath.equals(dirPath)) {
 			this.getSubDirAndFiles(strPath);
 		}
-		if (this.subFileList == null) {
-			System.out.println("获取子文件列表出错");
+		
+		if (this.subFileList == null && 
+				new File(strPath).list().length != 0) {
+			System.out.println(new File(strPath).list().length);
+			System.out.println(dirPath + " 获取子文件列表出错");
 			System.exit(0);
 		}	
 		return this.subFileList;

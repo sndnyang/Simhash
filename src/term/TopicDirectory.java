@@ -23,8 +23,7 @@ public class TopicDirectory {
 	public void setTopicDir(String dirPath) {
 		// TODO Auto-generated method stub
 		this.dirPath = dirPath;
-		DirectoryOperator operator = new DirectoryOperator();
-		this.fileList  = operator.getSubFilesList(dirPath);
+		this.fileList  = new DirectoryOperator().getSubFilesList(dirPath);
 	}
 	
 	public String getDirPath() {
@@ -32,7 +31,10 @@ public class TopicDirectory {
 	}
 
 	public ArrayList<FeatureText> extractFileFeature(String type) {
-		// TODO Auto-generated method stub
+		// TODO Auto-generated method stub\
+		if (this.fileList == null || !this.featureDocList.isEmpty())
+			return this.featureDocList;
+		
 		for (int i = 0; i < this.fileList.size(); i++) {
 			FeatureText temp = new FeatureText(fileList.get(i));
 			if (type.equals("frequency")) {
@@ -46,20 +48,5 @@ public class TopicDirectory {
 		}
 		
 		return featureDocList;
-	}
-
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		System.out.println("adfsd");
-		String dirPath = "E:\\yangxiulong\\Simhash\\testData\\similarSet\\´ºÍí";
-		System.out.println(dirPath);
-		TopicDirectory test = new TopicDirectory(dirPath);
-		ArrayList<FeatureText> docSet = test.extractFileFeature(dirPath);
-		for (int i = 0; i < docSet.size(); i++) {
-		
-		}
 	}
 }

@@ -92,6 +92,8 @@ public class TestExperiment {
 
 	private void getFeatureRecurse(String dirPath, int job) throws IOException {
 		// TODO Auto-generated method stub
+		if (job == 1)
+			this.task = 4;
 		ArrayList<FeatureText> filesList = initFeatureSet(dirPath);
 
 		switch (job) {
@@ -101,7 +103,7 @@ public class TestExperiment {
 		case 2:
 			for (int i = 0; i < testTimes; i++) {
 				totalCmpTimes += filesList.size() * (filesList.size() - 1) / 2;
-				for (int j = 1; j < 4; j++) {
+				for (int j = 3; j < 4; j++) {
 					this.task = j;
 					cmpFeatureTextSet(filesList, filesList);
 				}
@@ -125,12 +127,15 @@ public class TestExperiment {
 		for (int i = 0; i < filesList.size(); i++) {
 			FeatureText temp = filesList.get(i);
 			temp.debug = this.debug;
+			
 			if (this.debug != 0) {
 				System.out.println(temp.getName());
 				System.out.println(temp.getFrequency());
-				temp.extractSimHash(64);
-				temp.extractENSD();
 			}
+			int bits = 64;
+			if (this.task == 4)
+				temp.extractSimHash(32);
+			temp.extractENSD();
 		}
 		return filesList;
 	}
@@ -302,19 +307,8 @@ public class TestExperiment {
 
 	private void getAllPara(FeatureText formerText, FeatureText latterText) {
 		// TODO Auto-generated method stub
-		System.out.println(formerText.getName() + " " + latterText.getName());
 		SimHash formerHash = formerText.getSimHash();
 		SimHash latterHash = latterText.getSimHash();
-		int[] temp = formerHash.getWeightVector();
-		for (int i = 0; i < temp.length; i++)
-			System.out.print(temp[i] + " ");
-		System.out.println();
-		temp = latterHash.getWeightVector();
-		for (int i = 0; i < temp.length; i++)
-			System.out.print(temp[i] + " ");
-		System.out.println();
-		System.out.println(formerHash.getSimHash() + " "
-				+ latterHash.getSimHash());
 
 		double setSimilar = vOperator.computeAsSet(
 				formerHash.getTermFrequency(), latterHash.getTermFrequency());
@@ -330,8 +324,7 @@ public class TestExperiment {
 
 		ENSD a = formerText.extractENSD();
 		ENSD b = latterText.extractENSD();
-		System.out.println(a.getTermFrequency().size() + " "
-				+ b.getTermFrequency().size());
+
 		DecimalFormat df = new DecimalFormat("#.000");
 
 		try {

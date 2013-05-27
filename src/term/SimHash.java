@@ -19,7 +19,7 @@ public class SimHash extends TermFrequencyEle {
 	public BigInteger intSimHash;
 	private String strSimHash;
 	private int[] weightVector;
-	private int hashbits = 64;
+	private int hashbits = 32;
 	public int debug = 0;
 
 	public SimHash(String str, String fileName) throws IOException {

@@ -1,156 +1,104 @@
 package main;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
+import operator.ENSDSimilar;
+import operator.VectorSimilar;
 
-import operator.SimHashSimilar;
 import org.wltea.analyzer.IKSegmentation;
 
+import term.ENSD;
 import term.SimHash;
+import term.TermFrequencyEle;
 import fileclass.DirectoryOperator;
 
 public class SimHashCompare {
 	/* 
 	 * 
 	 */
-	private static String fileName = "E:\\测试"; //"E:\\data\\体育领域" "测试"
-	private static SimHashSimilar comSimHash;
+	private static String fileName = "E:\\yangxiulong\\Simhash\\分类测试"; //"E:\\data\\体育领域" "测试"
+	private static ENSDSimilar comENSD = new ENSDSimilar();
 	
-	private static ArrayList<ArrayList<SimHash>> similarHash = new ArrayList<ArrayList<SimHash>>();
-	private static ArrayList<ArrayList<SimHash>> unsimilarHash = new ArrayList<ArrayList<SimHash>>();
+	private static ArrayList<SimHash> simhashList = new ArrayList<SimHash>();
+	private static ArrayList<ENSD> ENSDList = new ArrayList<ENSD>();
 	
-	private int hashBits = 64;
-	private int kThreshold = 5;
 	
-	public void setThreshold(int threshold) {
+	private void beginExperiment(String dirPath) {
 		// TODO Auto-generated method stub
-		this.kThreshold = threshold;
+		getFeatureRecurse(dirPath);
 	}
 
-	public void setBits(int bits) {
+	private void getFeatureRecurse(String dirPath) {
 		// TODO Auto-generated method stub
-		this.hashBits = bits;
+		try {
+			initFeatureSet(dirPath);
+			compareFeature();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		ArrayList<String> subDirList = new DirectoryOperator()
+				.getSubDirList(dirPath);
+		for (int i = 0; i < subDirList.size(); i++) {
+			getFeatureRecurse(subDirList.get(i));
+		}
 	}
 
-	public void getDataFromDir(String strPath) throws IOException {
+	private void compareFeature() throws IOException {
 		// TODO Auto-generated method stub
-		DirectoryOperator operator = new DirectoryOperator();
-		ArrayList<String> topicDir = operator.getSubDirAndFiles(strPath);
-		for (int i = 0; i < topicDir.size(); i++) {
-			List<String> typeDir = operator.getSubDirAndFiles(topicDir.get(i));
-			for (int j = 0; j < typeDir.size(); j++) {
-				String type = typeDir.get(j);
-				List<String> fileDir = operator.getSubDirAndFiles(type);
-				if (fileDir != null) {
-					ArrayList<SimHash> middleList = new ArrayList<SimHash>();
-					for (int k = 0; k < fileDir.size(); k++) {
-						String fileName = fileDir.get(k);
-						String res = operator.readFileByLines(fileName);
-						
-						SimHash tempHash = new SimHash(res, fileName);
-						tempHash.generateEle();
-						System.out.println(tempHash.getFileName());
-						System.out.println(tempHash.getTermFrequency());
-						System.out.println(tempHash.getSimHash());
-						middleList.add(tempHash);
-					}
-					if (type.contains("不相似集合")) {
-						unsimilarHash.add(middleList);
-					} else if (type.contains("相似集合")) {
-						similarHash.add(middleList);
-					}
-					
-				}
+		VectorSimilar vector = new VectorSimilar();
+		for (int i = 0; i < simhashList.size(); i++) {
+			SimHash formerSimhash = simhashList.get(i);
+			//ENSD formerENSD = ENSDList.get(i);
+			for (int j = i + 1; j < simhashList.size(); j++) {
+				SimHash latterSimhash = simhashList.get(j);
+				int dis = vector.hammingDistance(formerSimhash.getIntegerHash(),
+						latterSimhash.getIntegerHash());
+				System.out.println(dis);
+				/*
+				double fpCosine = vector.computeAsVector(formerSimhash.getSimHash(), 
+						latterSimhash.getSimHash());
+				double vectorCosine = vector.computeAsVector(formerSimhash.getWeightVector(), 
+						latterSimhash.getWeightVector());
+				double setSimilar = vector.computeAsSet(formerSimhash.getTermFrequency(), 
+						latterSimhash.getTermFrequency());
 				
-			}
-			testPerformance();
-			similarHash.clear();
-			unsimilarHash.clear();
-		}
-	}
-	
-	public void testPerformance() throws IOException {
-		// TODO Auto-generated method stub
-		
-		String writeFile = "simhash_result.csv";
-		FileWriter fw = new FileWriter(writeFile);
-		fw.write("位数,k值,总相似次数,准确率,召回率,F-value,漏判率,误判率,错误率\n");
-		int[] bitLength = new int[]{16, 32, 64};
-		
-		for (int i = 2; i < bitLength.length; i++) {
-			for (int j = 5; j <= 5; j++) {
-				comSimHash = new SimHashSimilar();
-				comSimHash.setDistThreshold(j);
-				testAlgorithm(bitLength[i]);
-				//comSimHash.writeResultFile(bitLength[i], j, fw);
-			}
-		}
-		fw.close();
-	}	
-
-	public void testRate(int testTimes) throws IOException {
-		// TODO Auto-generated method stub
-		
-		for (int k = 0; k < testTimes; k++) {
-			comSimHash = new SimHashSimilar();
-			comSimHash.setDistThreshold(5);
-			testAlgorithm(64);
-		}
-	}
-
-	private void testAlgorithm(int bitLength) throws IOException {
-		// TODO Auto-generated method stub
-		hashBits = bitLength;
-		for (int i = 0; i < similarHash.size(); i++) {
+				ENSD latterENSD = ENSDList.get(j);
 			
-			ArrayList<SimHash> similar = similarHash.get(i);
-			cmpSimilar(  similar,   similar,  true);
-			
-			ArrayList<SimHash> unsimilar = unsimilarHash.get(i);
-			cmpSimilar(  similar, unsimilar, false);
-			//cmpSimilar(unsimilar, unsimilar, false);
-		}		
+				double resENSD = comENSD.computeSimilar(formerENSD, latterENSD);
+		
+				
+				System.out.print(dis + "," + fpCosine + ",");
+				//System.out.print(vectorCosine + "," + setSimilar + ",");
+				//System.out.println(resENSD);*/
+			}
+		}
 	}
 
-	private void cmpSimilar(ArrayList<SimHash> lista, 
-			ArrayList<SimHash> listb, boolean status)
-			throws IOException {
+	private void initFeatureSet(String dirPath) throws IOException {
 		// TODO Auto-generated method stub
+		DirectoryOperator directory = new DirectoryOperator();
 		
-		for (int i = 0; i < lista.size(); i++) {
-			SimHash a = lista.get(i);
-			if (a.getHashBits() != hashBits) {
-				a.setHashBits(hashBits);
-				a.generateEle();
-			}
-
-			int j = i + 1;
-			if (!status)
-				j = 0;
-
-			for (; j < listb.size(); j++) {
-				SimHash b = listb.get(j);
-				if (b.getHashBits() != hashBits) {
-					b.setHashBits(hashBits);
-					b.generateEle();
-				}
-				
-				comSimHash.setter(status);
-				System.out.print(a.getSimHash()+",");
-				System.out.print(b.getSimHash()+",");
-				System.out.println(a.hammingDistance(b));
-				double res = comSimHash.computeSimilar(a, b);
-				
-
-				if (res > 0.45) {
-					
-				}
-				
-			}
+		ArrayList<String> subFilesList = directory.getSubFilesList(dirPath);
+		
+		for (int i = 0; i < subFilesList.size(); i++) {
+			String fileName = subFilesList.get(i);
+			String content  = directory.readFileByLines(fileName);
+			//TermFrequencyEle tempEle = new TermFrequencyEle(content, fileName);
+			//tempEle.generateEle();
+			SimHash tempSimHash = new SimHash(content, fileName);
+			//, tempEle.getTermFrequency());
+			tempSimHash.generateEle();
+			simhashList.add(tempSimHash);
+			
+			//ENSD tempENSD = new ENSD(content, fileName);
+			//tempENSD.setTermFrequency(tempEle.getTermFrequency());
+			//tempENSD.generateEle();
+			//ENSDList.add(tempENSD);
+			
 		}
 	}
 
@@ -166,12 +114,9 @@ public class SimHashCompare {
 
 		SimHashCompare testFile = new SimHashCompare();
 
-		try {
-			testFile.getDataFromDir(fileName);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+
+		testFile.beginExperiment(fileName);
+
 
 		long timeEnd = System.currentTimeMillis();
 		System.out.println(new Date());
